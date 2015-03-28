@@ -7,7 +7,7 @@ var redis=require("then-redis");
 process.env.PORT=8888;
 var signalmaster=require("signal-master")
 var port=8080;
-var db=redis.createClient();
+var db=redis.createClient(6379,"MAGI-1.local",{});
 db.scanUniqueSet=function(key){
   return new Promise(function(fulfill,reject){
     var promiseArray=[];
