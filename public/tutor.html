@@ -3,12 +3,18 @@
     <head>
         <script src="http://simplewebrtc.com/latest.js"></script> 
         <script src="/socket.io/socket.io.js"></script>
+        <script src="/public/jquery.min.js"></script>
         <style>
             #remoteVideos video {
                 height: 300px;
             }
             #localVideo {
                 height: 150px;
+            }
+            #chatbox{
+              height:300px;
+              width:100%;
+              border: solid 1px black;
             }
         </style>
         <script>
@@ -23,24 +29,59 @@
             url: 'http://52.74.110.115:8888/'
           });
 */
-/*
-          webrtc.on('readyToCall', function () {
-              // you can name it anything
-              webrtc.joinRoom('hello');
-          });
-*/        
-          var socket = io();
+        var socket = io();
+        var userid;
+        var username;
+        function start(name,userId){
+          username=name;
+          userid=userId;
           socket.on('greeting', function (data) {
             console.log(data);
             socket.emit("init",{
-              userid: "yyc"
+              userid: userid
               , mode: "tutor"
+              , name: username
             });
           });
+          socket.on('init',function(socketId){
+            console.log("inited",socketId);
+            if(data="ok"){
+/*
+              webrtc.on('readyToCall', function () {
+                  webrtc.joinRoom(socketId);
+              });         
+*/
+            }
+          });
+          socket.on("systemMessage",function(message){
+            console.log("system message",message);
+            $("#chatlist").append("<li>"+message+"</li>");
+          });
+          socket.on("chatMessage",function(json){
+            console.log("chat message",json);
+            $("#chatlist").append("<li>"+json.name+": "+json.message+"</li>");
+          })
+        }
+        $(document).ready(function(){
+          $("#chatform").submit(function(event){
+            event.preventDefault();
+            message=$("#messagebox").val();
+            if(message){
+              $("#chatlist").append("<li>"+username+":"+message+"</li>");
+              socket.emit("chatMessage",message);
+              $("#messagebox").val("");
+            }
+            return false;
+          });
+          //relocate this to wherever the user is ready to broadcast
+          start("yyc","yyc478");
+        });
         </script>
     </head>
     <body>
         <video id="localVideo"></video>
         <div id="remoteVideos">Waiting for connection...</div>
+        <div id="chatbox"><ul id="chatlist"></ul></div>
+        <form id="chatform"><input type="text" id="messagebox" /><button type="submit">Send</button></form>
     </body>
 </html>

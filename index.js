@@ -64,30 +64,47 @@ app.route("/public/:filename").get(function(req,res,next){
 });
 io.on("connection",function(socket){
   var mode;
+  var userid;
+  var name;
   var currentRoom;
   socket.emit("greeting","Connected to studysocket.js");
   socket.on("init",function(json){
     userid=json.userid;
+    mode=json.mode;
+    name=json.name;
     if(json.mode=="tutor"){
       db.hset("tutors",userid,socket.id).then(function(response){
-      socket.emit("init","ok");
+      currentRoom=socket.id;
+      socket.join(socket.id)
+      socket.emit("init",socket.id);
     },function(error){
       socket.emit("error",error);
+      
       currentRoom=socket.id;
     });
     }
     else {
       db.hdel("tutors",userid);
       socket.on("hello",function(tutorId){
+        console.log("hello from",userid,"to",tutorId);
         db.hget("tutors",tutorId).then(function(room){
-          socket.join(room);      
+          console.log("room",room);
+          currentRoom=room;
+          socket.to(currentRoom).emit("systemMessage",name+" has joined.");
+          socket.join(currentRoom);
+          socket.emit("systemMessage","Connected. Chat Now!");
         });
       });
     }
 
   })
-  socket.on("chatMessage",function(){
-    socket.to(currentRoom).emit("chatMessage",)
+  socket.on("chatMessage",function(message){
+    console.log(currentRoom);
+    console.log(message);
+    socket.to(currentRoom).emit("chatMessage",{name:name
+      , userid: userid
+      , message:message}
+      );
   });
   socket.on("disconnect",function(){
     
